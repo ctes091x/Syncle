@@ -1,5 +1,5 @@
 import bcrypt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any, Union
 from jose import jwt
 
@@ -38,9 +38,9 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
     subject: トークンに埋め込む識別子（通常は user_id や username）
     """
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     # ペイロード（中身）の作成
     to_encode = {"sub": str(subject), "exp": expire}
