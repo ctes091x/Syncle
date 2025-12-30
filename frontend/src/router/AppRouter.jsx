@@ -21,6 +21,12 @@ import TaskDetailPage from '../pages/tasks/[taskId]';
 import AdminDashboard from '../pages/admin/dashboard';
 import AdminMembers from '../pages/admin/members';
 
+// グループ関連ページ
+import GroupCalendarPage from '../pages/group/[groupId]';
+import GroupMembersPage from '../pages/group/[groupId]/members';
+import GroupInfoPage from '../pages/group/[groupId]/info';
+import GroupRequestsPage from '../pages/group/[groupId]/join_requests';
+
 export const AppRouter = () => {
   return (
     <Routes>
@@ -44,6 +50,19 @@ export const AppRouter = () => {
       <Route path="/tasks" element={<TasksListPage />} />
       <Route path="/tasks/new" element={<TaskCreatePage />} />
       <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
+
+      {/* --- グループ関連ルート (/group) --- */}
+      {/* トップ (カレンダー表示) */}
+      <Route path="/group/:groupId" element={<GroupCalendarPage />} />
+      
+      {/* メンバー管理 */}
+      <Route path="/group/:groupId/members" element={<GroupMembersPage />} />
+      
+      {/* グループ情報・設定 */}
+      <Route path="/group/:groupId/info" element={<GroupInfoPage />} />
+      
+      {/* 参加申請一覧 */}
+      <Route path="/group/:groupId/join_requests" element={<GroupRequestsPage />} />
 
       {/* --- 管理者ルート (/admin) --- */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
