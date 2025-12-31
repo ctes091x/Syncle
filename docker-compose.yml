@@ -13,7 +13,7 @@ services:
       - db_data:/var/lib/mysql      # データを永続化するためのボリューム
 
   backend:
-    build: .
+    build: ./backend
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/app                     # ホストのコード変更をコンテナに即時反映
