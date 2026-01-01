@@ -13,11 +13,6 @@ from . import crud, schemas, models
 
 router = APIRouter()
 
-@router.get("/me", response_model=schemas.UserResponse)
-def read_users_me(current_user: user_models.User = Depends(get_current_user)):
-    """ログイン中の自分の情報を取得"""
-    return current_user
-
 @router.post("/signup", response_model=schemas.UserResponse)
 def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     """
@@ -111,6 +106,10 @@ def delete_my_account(
     # 204 No Content は「成功したけど返すデータはない」という意味
     return
 
+@router.get("/me", response_model=schemas.UserResponse)
+def read_users_me(current_user: user_models.User = Depends(get_current_user)):
+    """ログイン中の自分の情報を取得"""
+    return current_user
 
 # 将来的に、アカウントの凍結を実装するときに必要
 # @router.put("/{user_id}/freeze")
