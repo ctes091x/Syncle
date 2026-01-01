@@ -31,16 +31,19 @@ class Task(Base):
 
     description = Column(Text)
 
-    status = Column(String(255))
+    is_task = Column(Boolean, default=False, nullable=False)
+
+    status = Column(String(255), default="未着手", comment="未着手、進行中、完了、None=タスクではない")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # グループテーブルとの関係
-    groups = relationship(
+    group = relationship(
         "app.modules.group.models.Group",
         back_populates="tasks"
     )
+    # タスクユーザーテーブルとの関係
     task_user_relations = relationship(
         "TaskUser_Relation", 
         back_populates="tasks",
@@ -49,24 +52,24 @@ class Task(Base):
 
 class TaskUser_Relation(Base):
 
-    __tablename__ = "task_user_relaitons"
+    __tablename__ = "task_user_relations"
     
     relation_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     task_id = Column(String(36), ForeignKey("tasks.task_id", ondelete="CASCADE"), nullable=False)
     user_id = Column(String(36), ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
-    is_assigned = Column(Boolean, default=False, comemnt="True: 担当者, False: 担当者でない")
+    is_assigned = Column(Boolean, default=False, comment="True: 担当者, False: 担当者でない")
     reaction = Column(String(20), default="no-reaction",comment="join: 参加, absent: 不参加, undecided: 未定, no-reaction: 無反応")
     comment = Column(Text)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    users = relationship(
+    user = relationship(
         "app.modules.user.models.User",
         back_populates="task_user_relations"
     )
-    tasks = relationship(
+    task = relationship(
         "Task", 
         back_populates="task_user_relations"
     )

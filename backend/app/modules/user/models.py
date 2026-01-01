@@ -57,7 +57,7 @@ class User(Base):
     )
     task_user_relations = relationship(
         "app.modules.task.models.TaskUser_Relation", 
-        back_populates="users", 
+        back_populates="user", 
         # ユーザーが削除されたら、紐付いている task_user_relations も一緒に破棄する設定
         cascade="all, delete-orphan" # <--- これが重要
     )

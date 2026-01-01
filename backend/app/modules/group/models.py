@@ -32,7 +32,7 @@ class Group(Base):
     )
     tasks = relationship(
         "app.modules.task.models.Task", 
-        back_populates="groups", 
+        back_populates="group", 
         cascade="all, delete-orphan" # グループ削除時にタスクも全消去
     )
 
