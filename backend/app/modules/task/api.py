@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -66,11 +66,11 @@ def create_task(
     current_user: User = Depends(get_current_user)
 ):
     """
-    タスクを作成する。
-    ※作成者自身はメンバー(担当/参加)には追加されません。
+    【管理者専用】タスクを作成する。
     """
-    check_group_member(db, group_id, current_user.user_id)
-    
+    # 権限チェックを管理者に変更
+    check_group_admin_permission(current_user, group_id, db)    
+
     new_task = crud.create_task(db, task_in, group_id)
     return new_task
 
@@ -78,10 +78,26 @@ def create_task(
 def read_tasks(
     group_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    # --- フィルタリング用パラメータ ---
+    skip: int = 0,
+    limit: int = 30,
+    from_date: Optional[str] = Query(None, description="YYYY-MM-DD形式。指定日以降のタスク"),
+    to_date: Optional[str] = Query(None, description="YYYY-MM-DD形式。指定日以前のタスク"),
+    filter_type: Optional[str] = Query(None, description="my_related(担当or参加), undecided(未定回答), recent_created(最近作成された順)"),
 ):
     check_group_member(db, group_id, current_user.user_id)
-    return crud.get_tasks_by_group(db, group_id)
+
+    return crud.get_tasks_by_group_advanced(
+        db=db, 
+        group_id=group_id, 
+        user_id=current_user.user_id,
+        skip=skip,
+        limit=limit,
+        from_date_str=from_date,
+        to_date_str=to_date,
+        filter_type=filter_type
+    )
 
 @router.get("/{task_id}", response_model=schemas.TaskResponse)
 def read_task_detail(
@@ -104,7 +120,10 @@ def update_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    check_group_member(db, group_id, current_user.user_id)
+    """【管理者専用】タスク情報の更新"""
+    # 権限チェック
+    check_group_admin_permission(current_user, group_id, db)
+
     task = crud.get_task(db, task_id, group_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -117,10 +136,10 @@ def delete_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # タスク削除: ここではメンバーなら誰でも削除可としていますが、
-    # 管理者のみにしたい場合は check_group_admin_permission(current_user, group_id, db) に変えてください
-    check_group_member(db, group_id, current_user.user_id)
-    
+    """【管理者専用】タスク削除"""
+    # 権限チェックを管理者に変更
+    check_group_admin_permission(current_user, group_id, db)    
+
     task = crud.get_task(db, task_id, group_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
