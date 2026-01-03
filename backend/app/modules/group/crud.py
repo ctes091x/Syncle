@@ -17,8 +17,8 @@ def get_user_group(db: Session, user_id: str, group_id: str):
 
 def count_members(db: Session, group_id: str) -> int:
     """グループの現在のメンバー数を返す"""
-    return db.query(models.UserGroup).filter(
-        models.UserGroup.group_id == group_id
+    return db.query(models.GroupMember).filter(
+        models.GroupMember.group_id == group_id
     ).count()
 
 # --- 作成・加入系 ---
