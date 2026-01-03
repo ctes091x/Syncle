@@ -22,7 +22,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     # メールアドレスの重複チェック
     # (同姓同名は許可するため、名前でのチェックは行いません)
     if crud.get_user_by_email(db, email=user.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="そのアドレスは無効です。")
     
     # DBに保存
     return crud.create_user(db=db, user=user)
@@ -46,7 +46,7 @@ def login_for_access_token(
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="入力された情報が不正です。",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -54,7 +54,7 @@ def login_for_access_token(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is frozen."
+            detail="アカウントが凍結されています。"
         )
     
     # 4. 認証OKならトークンを発行 (subには一意なemailを入れるのが一般的)
@@ -108,7 +108,7 @@ def delete_my_account(
     success = crud.delete_user(db, user_id=current_user.user_id)
     
     if not success:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりませんでした。")
     
     # 204 No Content は「成功したけど返すデータはない」という意味
     return
@@ -128,20 +128,20 @@ def change_user_status(
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="この操作を行う権限がありません。"
         )
 
     # 自分自身を凍結してしまうのを防ぐ（誤操作防止）
-    if current_user.user_id == user_id and not status_in.is_active:
+    if current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot freeze your own account."
+            detail="super権限者自身を凍結することはできません。"
         )
 
     updated_user = crud.toggle_user_active_status(db, user_id, status_in.is_active)
     
     if not updated_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりませんでした。")
         
     return updated_user
 

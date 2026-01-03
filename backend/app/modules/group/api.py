@@ -272,7 +272,7 @@ def leave_or_remove_member(
     except Exception as e:
         db.rollback() # エラーが起きたら元に戻す
         logger.error(f"Error in leave_or_remove_member: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="サーバーエラーが発生しました。")
     
     return
 

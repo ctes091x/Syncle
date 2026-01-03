@@ -18,7 +18,7 @@ def get_current_user(
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="認証されていません。",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -38,6 +38,6 @@ def get_current_user(
 
     # トークンが有効でも、DB上で凍結されていたら弾く
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Frozen user")
+        raise HTTPException(status_code=403, detail="アカウントが凍結されています。")
 
     return user

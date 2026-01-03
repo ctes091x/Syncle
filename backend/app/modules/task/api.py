@@ -31,7 +31,7 @@ def check_group_member(db: Session, group_id: str, user_id: str):
     """
     member = group_crud.get_user_group(db, user_id, group_id)
     if not member or not member.accepted:
-        raise HTTPException(status_code=403, detail="Not a group member")
+        raise HTTPException(status_code=403, detail="グループのメンバーではありません。")
 
 def check_group_admin_permission(current_user: User, group_id: str, db: Session):
     """
@@ -130,7 +130,7 @@ def read_task_detail(
     check_group_member(db, group_id, current_user.user_id)
     task = crud.get_task(db, task_id, group_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="タスク/予定が見つかりませんでした。")
     return task
 
 @router.put("/{task_id}", response_model=schemas.TaskResponse)
@@ -147,7 +147,7 @@ def update_task(
 
     task = crud.get_task(db, task_id, group_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="タスク/予定が見つかりませんでした。")
     return crud.update_task(db, task, task_in)
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,7 +163,7 @@ def delete_task(
 
     task = crud.get_task(db, task_id, group_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="タスク/予定が見つかりませんでした。")
     crud.delete_task(db, task)
     return
 
@@ -187,17 +187,17 @@ def manage_assignment(
     # 2. タスク存在確認
     task = crud.get_task(db, task_id, group_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="タスク/予定が見つかりませんでした。")
 
     # 3. 対象ユーザー特定
     target_user = get_user_by_identifier(db, assignment_in.target_identifier)
     if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりませんでした。")
 
     # 4. 対象がグループメンバーか確認
     target_member = group_crud.get_user_group(db, target_user.user_id, group_id)
     if not target_member or not target_member.accepted:
-        raise HTTPException(status_code=400, detail="Target user is not a member of this group")
+        raise HTTPException(status_code=400, detail="対象はグループメンバーではありません。")
 
     # 5. 更新処理
     return crud.set_user_assignment(
@@ -224,7 +224,7 @@ def update_my_reaction(
     
     task = crud.get_task(db, task_id, group_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="タスク/予定が見つかりませんでした。")
     
     return crud.update_user_reaction(
         db, 
@@ -287,7 +287,7 @@ def delete_template(
     
     template = crud.get_template(db, template_id, group_id)
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="テンプレートが見つかりませんでした。")
         
     crud.delete_template(db, template)
     return
