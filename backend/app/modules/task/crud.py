@@ -18,7 +18,7 @@ def create_task(db: Session, task_in: schemas.TaskCreate, group_id: str):
     db.refresh(db_task)
     return db_task
 
-# --- ★大幅修正: 高度な検索機能 ---
+# --- 高度な検索機能 ---
 def get_tasks_by_group_advanced(
     db: Session, 
     group_id: str, 
@@ -115,18 +115,29 @@ def get_relation(db: Session, task_id: str, user_id: str):
 def _ensure_relation(db: Session, task_id: str, user_id: str) -> models.TaskUser_Relation:
     """リレーションを取得、なければ作成して返す内部関数"""
     relation = get_relation(db, task_id, user_id)
-    if not relation:
-        relation = models.TaskUser_Relation(
-            task_id=task_id,
-            user_id=user_id,
-            is_assigned=False,
-            reaction="no-reaction",
-            comment=None
-        )
-        db.add(relation)
-        # flushしてIDなどを確定させるが、commitは呼び出し元に任せるかここで一区切りするか
-        # ここでは後続処理があるため add の状態にしておく
-    return relation
+    if relation:
+        return relation
+
+    try:
+        with db.begin_nested():
+            relation = models.TaskUser_Relation(
+                task_id=task_id,
+                user_id=user_id,
+                is_assigned=False,
+                reaction="no-reaction",
+                comment=None
+            )
+            db.add(relation)
+            db.flush() # ここでINSERTを実行し、競合があればIntegrityErrorを発生させる
+            return relation
+        
+    except IntegrityError:
+        # 競合発生 (他人が一瞬早く作成した)
+        # 改めて取得する
+        relation = get_relation(db, task_id, user_id)
+        if not relation:
+            raise # 万が一それでも取得できない場合は想定外のエラーとして投げる
+        return relation
 
 def _cleanup_relation(db: Session, relation: models.TaskUser_Relation):
     """
