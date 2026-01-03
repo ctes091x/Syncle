@@ -48,7 +48,7 @@ class GroupMember(Base):
     - どのグループに(group_id)
     - どんな状態で(accepted, is_representative) 所属しているか
     """
-    __tablename__ = "user_groups"
+    __tablename__ = "group_members"
 
     # 修正: id -> user_group_id
     user_group_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

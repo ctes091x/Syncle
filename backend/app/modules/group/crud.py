@@ -162,7 +162,7 @@ def remove_member(db: Session, group_id: str, target_user_id: str):
 def delete_group(db: Session, db_group: models.Group):
     """
     グループを削除する。
-    Modelのcascade設定により、tasksやuser_groupsも連鎖的に削除される。
+    Modelのcascade設定により、tasksやgroup_membersも連鎖的に削除される。
     """
     db.delete(db_group)
     db.commit()
