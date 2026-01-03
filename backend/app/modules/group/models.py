@@ -27,7 +27,7 @@ class Group(Base):
     # リレーション: 中間テーブル(GroupMember)を通じてUserと関連付け
     group_members = relationship(
         "GroupMember", 
-        back_populates="groups", 
+        back_populates="group", 
         cascade="all, delete-orphan"
     )
     tasks = relationship(
@@ -69,7 +69,7 @@ class GroupMember(Base):
         "app.modules.user.models.User", 
         back_populates="group_members"
     )
-    groups = relationship(
+    group = relationship(
         "Group", 
         back_populates="group_members"
     )
