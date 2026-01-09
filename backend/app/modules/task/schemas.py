@@ -1,9 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, field_serializer
 from typing import Optional, List
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from enum import Enum
 
 from app.modules.user.schemas import UserResponse
+
+# 日本時間の定義
+JST = timezone(timedelta(hours=9), 'JST')
 
 # --- 中間テーブル (Relation) 用 ---
 class TaskFilterType(str, Enum):
@@ -49,6 +52,15 @@ class TaskBase(BaseModel):
     is_task: bool = False
     status: str
 
+    @field_validator('time_span_begin', 'time_span_end')
+    @classmethod
+    def force_jst(cls, v: datetime):
+        if v is None:
+            return None
+        if v.tzinfo is None:
+            return v.replace(tzinfo=JST)
+        return v.astimezone(JST)
+
 class TaskCreate(TaskBase):
     pass
 
@@ -62,6 +74,15 @@ class TaskUpdate(BaseModel):
     is_task: Optional[bool] = None
     status: Optional[str] = None
 
+    @field_validator('time_span_begin', 'time_span_end')
+    @classmethod
+    def force_jst(cls, v: datetime):
+        if v is None:
+            return None
+        if v.tzinfo is None:
+            return v.replace(tzinfo=JST)
+        return v.astimezone(JST)
+
 class TaskResponse(TaskBase):
     task_id: str
     group_id: str
@@ -73,6 +94,17 @@ class TaskResponse(TaskBase):
 
     class Config:
         from_attributes = True
+    @field_serializer('time_span_begin', 'time_span_end')
+    def serialize_dt(self, dt: datetime | None, _info):
+        """
+        レスポンスをJSONにする直前に呼ばれます。
+        UTCの時間を JST (+09:00) に変換して返します。
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is not None:
+            return dt.astimezone(JST)
+        return dt.replace(tzinfo=JST)
 
 # --- タスクテンプレート用スキーマ ---
 
@@ -109,6 +141,18 @@ class CalendarTaskResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_serializer('time_span_begin', 'time_span_end')
+    def serialize_dt(self, dt: datetime | None, _info):
+        """
+        レスポンスをJSONにする直前に呼ばれます。
+        UTCの時間を JST (+09:00) に変換して返します。
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is not None:
+            return dt.astimezone(JST)
+        return dt.replace(tzinfo=JST)
+
 # グループ横断カレンダー表示用の軽量スキーマ
 class GlobalCalendarTaskResponse(BaseModel):
     task_id: str
@@ -121,3 +165,15 @@ class GlobalCalendarTaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer('time_span_begin', 'time_span_end')
+    def serialize_dt(self, dt: datetime | None, _info):
+        """
+        レスポンスをJSONにする直前に呼ばれます。
+        UTCの時間を JST (+09:00) に変換して返します。
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is not None:
+            return dt.astimezone(JST)
+        return dt.replace(tzinfo=JST)
