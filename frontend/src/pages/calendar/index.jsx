@@ -1,10 +1,10 @@
 // frontend/src/pages/calendar/index.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import api from '../../lib/api'; // src/lib/api.js
+import api from '../../lib/api'; 
 
 import EventModal from './EventModal';
 
@@ -12,41 +12,73 @@ const CalendarPage = () => {
   const [events, setEvents] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  
+  const [currentUser, setCurrentUser] = useState(null);
+
   const calendarRef = useRef(null);
 
-  // カレンダーの表示月が変わるたびにバックエンドからデータを取得
-  const handleDatesSet = async (dateInfo) => {
-    // 表示中の中心となる日付から「年」「月」を計算
-    const centerDate = dateInfo.view.currentStart;
-    const year = centerDate.getFullYear();
-    const month = centerDate.getMonth() + 1;
+  // マウント時に一括でデータ取得を行う（APIの仕様上、月ごとの取得ではなく全件取得になるため）
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // 1. 自分のユーザー情報を取得
+        const meRes = await api.get('/me');
+        const myUser = meRes.data;
+        setCurrentUser(myUser);
 
-    try {
-      // 既存API: /my-tasks (自分専用、グループ横断)
-      const response = await api.get('/my-tasks', {
-        params: { year, month }
-      });
+        // 2. 自分が所属しているグループ一覧を取得
+        const groupsRes = await api.get('/me/groups');
+        const myGroups = groupsRes.data;
 
-      // APIレスポンス (GlobalCalendarTaskResponse) を FullCalendar 用に変換
-      const mappedEvents = response.data.map(task => ({
-        id: task.task_id,
-        title: task.title,
-        start: task.time_span_begin || task.date, 
-        end: task.time_span_end,
-        color: '#6366f1', // 個人の予定カラー
-        extendedProps: {
-          groupName: task.group_name, // APIから返ってくるグループ名
-          location: task.location,
-          description: task.description || '詳細なし',
-        }
-      }));
-      
-      setEvents(mappedEvents);
-    } catch (error) {
-      console.error("Failed to fetch my tasks:", error);
-    }
-  };
+        // 3. 各グループのタスク詳細を並列で取得
+        const tasksPromises = myGroups.map(async (group) => {
+          try {
+            // グループごとのタスク取得APIは詳細情報(relation)を含んでいる
+            const res = await api.get(`/groups/${group.group_id}/tasks`);
+            // タスクデータにグループ名を付与して返す
+            return res.data.map(task => ({ ...task, group_name: group.group_name }));
+          } catch (error) {
+            console.error(`Failed to fetch tasks for group ${group.group_id}`, error);
+            return []; // エラー時は空配列を返す
+          }
+        });
+
+        // 全グループのタスクを結合
+        const results = await Promise.all(tasksPromises);
+        const allTasks = results.flat();
+
+        // 4. 「自分が参加(join)しているタスク」のみにフィルタリング
+        const joinedTasks = allTasks.filter(task => {
+          const relations = task.task_user_relations || [];
+          const myRelation = relations.find(r => r.user_id === myUser.user_id);
+          // バックエンドの定義に合わせて 'join' で判定
+          return myRelation && myRelation.reaction === 'join';
+        });
+
+        // 5. FullCalendar用にマッピング
+        const mappedEvents = joinedTasks.map(task => ({
+          id: task.task_id,
+          title: task.title,
+          start: task.time_span_begin || task.date, 
+          end: task.time_span_end,
+          color: '#6366f1',
+          extendedProps: {
+            groupName: task.group_name,
+            location: task.location,
+            description: task.description || '詳細なし',
+            task_user_relations: task.task_user_relations,
+            status: task.status
+          }
+        }));
+
+        setEvents(mappedEvents);
+
+      } catch (error) {
+        console.error("Fetch data failed:", error);
+      }
+    };
+
+    fetchAllData();
+  }, []);
 
   const handleEventClick = (info) => {
     const eventObj = {
@@ -65,7 +97,9 @@ const CalendarPage = () => {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative">
       <div className="mb-4">
         <h2 className="text-xl font-bold text-slate-800">マイカレンダー</h2>
-        <p className="text-sm text-slate-500">参加中の全グループのタスクが表示されます（閲覧専用）</p>
+        <p className="text-sm text-slate-500">
+          あなたが「参加」を表明した全グループの予定を表示しています
+        </p>
       </div>
 
       <div className="h-[750px]">
@@ -83,10 +117,9 @@ const CalendarPage = () => {
           height="100%"
           
           events={events}
-          datesSet={handleDatesSet} // 表示期間変更時にデータ取得
+          // datesSet は削除 (useEffectで一括取得するため不要)
           eventClick={handleEventClick}
           
-          // ▼ 要件: 個人画面では移動・追加不可
           editable={false}
           selectable={false}
           dayMaxEvents={true}
@@ -97,8 +130,8 @@ const CalendarPage = () => {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         event={selectedEvent}
-        // 個人カレンダーからはリアクション操作をさせない（グループ画面へ誘導）
-        readOnly={true}
+        currentUser={currentUser}
+        readOnly={true} // マイカレンダーからは編集不可
       />
     </div>
   );
