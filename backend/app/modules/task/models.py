@@ -23,9 +23,9 @@ class Task(Base):
 
     date = Column(Date, nullable=False)
 
-    time_span_begin = Column(DateTime)
+    time_span_begin = Column(DateTime(timezone=True))
 
-    time_span_end = Column(DateTime)
+    time_span_end = Column(DateTime(timezone=True))
 
     location = Column(String(255))
 
