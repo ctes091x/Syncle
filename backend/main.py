@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 # --- FastAPIアプリの初期化 ---
 app = FastAPI(
     title="My Project API",
-    description="React + FastAPI + MySQL Application",
+    description="React + FastAPI + PostgreSQL Application",
     version="0.1.0"
 )
 
