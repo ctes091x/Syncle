@@ -1,3 +1,4 @@
+// frontend/src/pages/signup.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api'; // 作成したapi設定を読み込み
@@ -35,9 +36,8 @@ const SignupPage = () => {
       // ------------------------------------------------
       // 2. そのままログイン（トークン取得）を実行
       // ------------------------------------------------
-      // ログインには x-www-form-urlencoded 形式が必要なので変換
       const loginParams = new URLSearchParams();
-      loginParams.append('username', formData.email); // username欄にemailを入れる仕様
+      loginParams.append('username', formData.email);
       loginParams.append('password', formData.password);
 
       const loginResponse = await api.post('/token', loginParams, {
@@ -53,9 +53,6 @@ const SignupPage = () => {
       localStorage.setItem('token', access_token);
       
       console.log('自動ログイン成功！');
-      
-      // アラートは出さずに、スムーズにカレンダーへ移動させる
-      // (もしウェルカムメッセージを出したいなら、移動先のカレンダー画面で出すのが今風です)
       navigate('/calendar');
 
     } catch (error) {
@@ -74,8 +71,9 @@ const SignupPage = () => {
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
+          {/* ロゴ: G -> S に変更 */}
           <div className="w-12 h-12 bg-primary-600 text-white rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">
-            G
+            S
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">
@@ -113,7 +111,8 @@ const SignupPage = () => {
                   value={formData.username}
                   onChange={handleChange}
                   className="block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm transition-all"
-                  placeholder="例: geek_taro"
+                  // プレースホルダー: geek_taro -> syncle_taro
+                  placeholder="例: syncle_taro"
                 />
               </div>
             </div>

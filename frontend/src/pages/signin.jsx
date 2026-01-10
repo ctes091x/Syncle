@@ -1,3 +1,4 @@
+// frontend/src/pages/signin.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api'; // api設定を読み込み
@@ -53,12 +54,14 @@ const SigninPage = () => {
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
+          {/* ロゴ: G -> S に変更 */}
           <div className="w-12 h-12 bg-primary-600 text-white rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">
-            G
+            S
           </div>
         </div>
+        {/* タイトル: GeekCamp -> Syncle に変更 */}
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">
-          GeekCampにログイン
+          Syncleにログイン
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
           または{' '}
@@ -131,7 +134,6 @@ const SigninPage = () => {
               </div>
 
               <div className="text-sm">
-                {/* 以前のWarning対策: aタグをbuttonに変更 */}
                 <button
                   type="button"
                   onClick={() => alert('パスワードリセット機能は現在開発中です')}
