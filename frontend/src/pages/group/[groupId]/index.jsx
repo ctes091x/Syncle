@@ -207,15 +207,11 @@ const GroupCalendarPage = () => {
       // 3. ロジック分岐: 終日(AllDay)か、時間指定か
       if (allDay) {
         // --- 終日スロットへドロップした場合 ---
-        // 時間情報はNullにし、dateを設定する
-        // payload.date = newDateStr;
+        // 時間情報はNullにする
         payload.time_span_begin = null;
         payload.time_span_end = null;
       } else {
         // --- 時間スロットへドロップした場合 ---
-        // dateをundefined(送信しない)にし、時間を設定する
-        // ※バックエンドの仕様に合わせて undefined を使う
-        // payload.date = newDateStr;
         payload.time_span_begin = newStartISO;
         payload.time_span_end = newEndISO;
       }
