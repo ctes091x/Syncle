@@ -6,6 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import api from '../../../lib/api';
+import { format } from 'date-fns'
 
 import EventModal from '../../calendar/EventModal';
 import CreateEventModal from '../CreateEventModal';
@@ -92,8 +93,16 @@ const GroupCalendarPage = () => {
   const handleDateSelect = (selectInfo) => {
     if (!isAdmin) return;
     setEditTargetData(null); // 編集データをクリア
-    setInitialDateStr(selectInfo.startStr);
-    setInitialStartTimeStr('09:00');
+    // monthカレンダーかweekカレンダーのどちらをクリックしたかで取得情報を分岐
+    const rawStr = selectInfo.dateStr;
+    if (rawStr.includes('T')){
+      const [date, time] = rawStr.split('T');
+      setInitialDateStr(date);
+      setInitialStartTimeStr(time.substring(0,5));
+    } else {
+      setInitialDateStr(selectInfo.dateStr);
+      setInitialStartTimeStr('09:00');
+    }
     setIsCreateModalOpen(true);
   };
 
@@ -102,6 +111,7 @@ const GroupCalendarPage = () => {
     const eventObj = {
       id: info.event.id,
       title: info.event.title,
+      date: info.event.date,
       start: info.event.start,
       end: info.event.end,
       backgroundColor: info.event.backgroundColor,
@@ -119,7 +129,7 @@ const GroupCalendarPage = () => {
     const { start, end, extendedProps, title } = selectedEvent;
     
     // 日付 (YYYY-MM-DD)
-    const dateStr = start.toISOString().split('T')[0];
+    const dateStr = format(start, 'yyyy-MM-dd');
     
     // 時間 (HH:mm) - start
     const startH = String(start.getHours()).padStart(2, '0');
@@ -174,6 +184,9 @@ const GroupCalendarPage = () => {
       
       // YYYY-MM-DD形式
       const newDateStr = start ? start.toISOString().split('T')[0] : null;
+      // format を使った書き方も残しておきます。
+      // 現在は正常に動作しますが、もし日付更新などで不具合が起こったら切り替えてみてください。
+      // const newDateStr = start ? format(start, 'yyyy-MM-dd') : null;
 
       // 2. 既存データの引継ぎ
       // PUTリクエストなので、変更しないフィールドも全て送信しないと消える可能性がある
@@ -251,6 +264,11 @@ const GroupCalendarPage = () => {
     
     const timeStr = String(nextHour.getHours()).padStart(2, '0') + ':' + 
       String(nextHour.getMinutes()).padStart(2, '0');
+
+    // format を使った書き方も残しておきます。
+    // 現在は正常に動作しますが、もし日付更新などで不具合が起こったら切り替えてみてください。
+    // const dateStr = format(nextHour, 'yyyy-MM-dd');
+    // const timeStr = format(nextHour, 'HH:mm');
 
     setInitialDateStr(dateStr);
     setInitialStartTimeStr(timeStr);
