@@ -2,18 +2,38 @@ from sqlalchemy import or_, desc, extract
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from app.modules.group import models as group_models
 from . import models, schemas
 
+
+import logging
+logger = logging.getLogger("a")
+logger.setLevel(logging.INFO)
+# コンソールに出力するためのハンドラ設定（これをしないと表示されないことがあります）
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+
+JST = timezone(timedelta(hours=9), 'JST')
+def utc_to_jst(task: models.Task):
+    if task.time_span_begin:
+        task.time_span_begin = task.time_span_begin.astimezone(JST)
+    if task.time_span_end:
+        task.time_span_end = task.time_span_end.astimezone(JST)
+    return task
+
 # --- Task本体 ---
 
-def create_task(db: Session, task_in: schemas.TaskCreate, group_id: str):
+def create_task(db: Session, task_in: schemas.TaskCreate, group_id: str):        
     db_task = models.Task(
         **task_in.model_dump(),
         group_id=group_id
     )
+    if db_task.title == "":
+        return None
+
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -87,13 +107,23 @@ def get_tasks_by_group_advanced(
         .all()
 
 def get_task(db: Session, task_id: str, group_id: str):
-    return db.query(models.Task).filter(
+    task = db.query(models.Task).filter(
         models.Task.task_id == task_id,
         models.Task.group_id == group_id
     ).first()
 
+    task = utc_to_jst(task)
+
+    logger.info(f'GET: current title is {task.title}')
+    logger.info(f'GET: current date is {task.date}, current time is {task.time_span_begin} - {task.time_span_end}')
+    return task
+
 def update_task(db: Session, db_task: models.Task, task_update: schemas.TaskUpdate):
     update_data = task_update.model_dump(exclude_unset=True)
+
+    logger.info(f'UP: current setting: date is {db_task.date}, begin is {db_task.time_span_begin}')
+    logger.info(f'UP: time_begin is {update_data["time_span_begin"]}')
+
     for field, value in update_data.items():
         if field in ["title", "date", "status", "is_task"] and (value is None or value == ""):
             continue
